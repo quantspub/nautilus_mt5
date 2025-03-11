@@ -1,17 +1,34 @@
 import logging
 import os
+from enum import IntEnum
 from time import sleep
 from typing import ClassVar
 
 from rpyc.utils.classic import DEFAULT_SERVER_PORT
 from nautilus_mt5.config import DockerizedMT5TerminalConfig
 from nautilus_trader.common.component import Logger as NautilusLogger
-from nautilus_mt5.metatrader5.terminal import ContainerStatus as MTContainerStatus
 
+class ContainerStatus(IntEnum):
+    """
+    Enumeration of Docker container statuses for the MT5 terminal.
 
-class ContainerStatus(MTContainerStatus):
-    pass
+    Attributes:
+        NO_CONTAINER (int): No container is running.
+        CONTAINER_CREATED (int): Container is created but not started.
+        CONTAINER_STARTING (int): Container is starting up.
+        CONTAINER_STOPPED (int): Container is stopped.
+        NOT_LOGGED_IN (int): Container is running but MT5 is not logged in.
+        READY (int): Container is running and MT5 is logged in.
+        UNKNOWN (int): Container status is unknown.
+    """
 
+    NO_CONTAINER = 1
+    CONTAINER_CREATED = 2
+    CONTAINER_STARTING = 3
+    CONTAINER_STOPPED = 4
+    NOT_LOGGED_IN = 5
+    READY = 6
+    UNKNOWN = 7
 
 class DockerizedMT5Terminal:
     """
