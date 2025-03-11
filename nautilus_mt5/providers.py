@@ -4,7 +4,7 @@ from nautilus_trader.config import resolve_path
 from nautilus_trader.model.identifiers import InstrumentId
 from nautilus_trader.model.instruments.base import Instrument
 
-from metatrader5ext import MetaTrader5Ext as MetaTrader5Client
+from mt5 import MetaTrader5Ext as MetaTrader5Client
 from nautilus_mt5.common import MT5Symbol, MT5SymbolDetails
 from nautilus_mt5.config import MetaTrader5InstrumentProviderConfig
 from nautilus_mt5.parsing.instruments import (

@@ -1,4 +1,5 @@
 .vscode/
+.venv/
 .ipynb_checkpoints/*
 .idea/
 htmlcov
@@ -7,7 +8,7 @@ MANIFEST
 dist/
 *.pyc
 build/*
-nautilus_metatrader5/*.so
-nautilus_metatrader5/*.html
-nautilus_metatrader5/*.c
-nautilus_metatrader5.egg-info
+nautilus_mt5/*.so
+nautilus_mt5/*.html
+nautilus_mt5/*.c
+nautilus_mt5.egg-info

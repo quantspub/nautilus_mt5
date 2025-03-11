@@ -6,7 +6,7 @@ from typing import ClassVar
 from rpyc.utils.classic import DEFAULT_SERVER_PORT
 from nautilus_mt5.config import DockerizedMT5TerminalConfig
 from nautilus_trader.common.component import Logger as NautilusLogger
-from metatrader5ext.terminal import ContainerStatus as MTContainerStatus
+from nautilus_mt5.metatrader5.terminal import ContainerStatus as MTContainerStatus
 
 
 class ContainerStatus(MTContainerStatus):

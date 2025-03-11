@@ -1,15 +1,53 @@
 from __future__ import annotations
-from typing import Literal
+from typing import Literal, Optional
 from nautilus_trader.config import InstrumentProviderConfig
 from nautilus_trader.config import LiveDataClientConfig
 from nautilus_trader.config import LiveExecClientConfig
 from nautilus_trader.config import NautilusConfig
 
-from metatrader5ext.common import (
+from nautilus_mt5.common import (
     MarketDataType as MT5MarketDataType,
+    Mode,
 )
 from nautilus_mt5.common import MT5Symbol
 
+@dataclass 
+class RpycConfig:
+    """
+    Configuration for RPYC.
+
+    Parameters:
+        host (str): Host address for the RPYC connection. Default is "localhost".
+        port (int): Port number for the RPYC connection. Default is 18812.
+        keep_alive (bool): Whether to keep the RPYC connection alive. Default is False.
+    """
+    host: str = "localhost"
+    port: int = 18812
+    keep_alive: bool = False
+
+@dataclass
+class MetaTrader5ExtConfig:
+    """
+    Configuration for MetaTrader5Ext.
+
+    Parameters:
+        id (int): ID of the client. Default is 1.
+        mode (Mode): Mode of the client. Default is Mode.IPC.
+        market_data (MarketData): Type of market data. Default is MarketData.NULL.
+        ea_client (Optional[EAClientConfig]): Configuration for EAClient. Default is None.
+        rpyc (Optional[RpycConfig]): Configuration for RPYC. Default is None.
+        id (int): ID of the client. Default is 1.
+        mode (Mode): Mode of the client. Default is Mode.IPC.
+        market_data (MarketData): Type of market data. Default is MarketData.NULL.
+        ea_client (Optional[EAClientConfig]): Configuration for EAClient. Default is None.
+        rpyc (Optional[RpycConfig]): Configuration for RPYC. Default is None.
+        logger (Optional[Callable]): A logger instance for logging messages. Default is None.
+    """
+    id: int = 1
+    mode: Mode = Mode.IPC
+    ea_client: Optional[EAClientConfig] = None
+    rpyc: Optional[RpycConfig] = None
+    debug: bool = False
 
 class DockerizedMT5TerminalConfig(NautilusConfig, frozen=True):
     """

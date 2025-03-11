@@ -61,7 +61,7 @@ from nautilus_trader.model.orders.stop_market import StopMarketOrder
 from nautilus_trader.model.orders.trailing_stop_limit import TrailingStopLimitOrder
 from nautilus_trader.model.orders.trailing_stop_market import TrailingStopMarketOrder
 
-from metatrader5ext import MetaTrader5Ext as MetaTrader5Client
+from mt5 import MetaTrader5Ext as MetaTrader5Client
 from nautilus_mt5.client.common import MT5Position
 from nautilus_mt5.common import MT5_VENUE
 from nautilus_mt5.common import MT5OrderTags

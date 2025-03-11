@@ -7,11 +7,11 @@ from decimal import Decimal
 from typing import Annotated, Any, NamedTuple
 
 import msgspec
-from metatrader5ext import (
+from mt5 import (
     MetaTrader5Ext as MetaTrader5Client,
     MetaTrader5ExtConfig as MetaTrader5ClientConfig,
 )
-from metatrader5ext.common import BarData, CommissionReport
+from nautilus_mt5.metatrader5.common import BarData, CommissionReport
 from metatrader5ext.execution import Execution
 
 from nautilus_mt5.common import MT5Symbol

@@ -5,7 +5,7 @@ from collections.abc import Callable, Coroutine
 from inspect import iscoroutinefunction
 from typing import Any
 
-from metatrader5ext import (
+from mt5 import (
     MetaTrader5ExtConfig,
     CommissionReport,
     BarData,
