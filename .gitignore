@@ -1,0 +1,13 @@
+.vscode/
+.ipynb_checkpoints/*
+.idea/
+htmlcov
+.coverage
+MANIFEST
+dist/
+*.pyc
+build/*
+nautilus_metatrader5/*.so
+nautilus_metatrader5/*.html
+nautilus_metatrader5/*.c
+nautilus_metatrader5.egg-info
