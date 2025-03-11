@@ -25,12 +25,12 @@ To install the MetaTrader 5 Adapter, follow these steps:
 
 1. Clone the repository:
    ```sh
-   git clone https://github.com/quantspub/nautilus_metatrader5.git
+   git clone https://github.com/quantspub/nautilus_mt5.git
    ```
 
 2. Navigate to the project directory:
    ```sh
-   cd /nautilus_metatrader5
+   cd /nautilus_mt5
    ```
 
 3. Pull the Docker image:
@@ -76,12 +76,12 @@ python connect_with_dockerized_terminal.py
 The project structure is organized as follows:
 
 ```
-nautilus_metatrader5/
+nautilus_mt5/
 ├── examples/
 │   ├── connect_with_dockerized_terminal.py
 │   ├── .env.example
 │   └── ...
-├── nautilus_metatrader5/    # Source code for the adapter
+├── nautilus_mt5/    # Source code for the adapter
 ├── tests/                   # Test cases
 ├── MQL5/                    # MQL5 scripts and EA module
 ├── docs/                    # Documentation files
