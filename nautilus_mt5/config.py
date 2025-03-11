@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Literal, Optional
+from typing import Callable, Literal, Optional
 from nautilus_trader.config import InstrumentProviderConfig
 from nautilus_trader.config import LiveDataClientConfig
 from nautilus_trader.config import LiveExecClientConfig
@@ -7,12 +7,12 @@ from nautilus_trader.config import NautilusConfig
 
 from nautilus_mt5.common import (
     MarketDataType as MT5MarketDataType,
-    Mode,
+    TerminalConnectionMode,
 )
 from nautilus_mt5.common import MT5Symbol
 
-@dataclass 
-class RpycConfig:
+
+class RpycConfig(NautilusConfig, frozen=True):
     """
     Configuration for RPYC.
 
@@ -25,29 +25,30 @@ class RpycConfig:
     port: int = 18812
     keep_alive: bool = False
 
-@dataclass
-class MetaTrader5ExtConfig:
+
+class EAClientConfig(NautilusConfig, frozen=True):
     """
-    Configuration for MetaTrader5Ext.
+    Configuration for EAClient.
 
     Parameters:
-        id (int): ID of the client. Default is 1.
-        mode (Mode): Mode of the client. Default is Mode.IPC.
-        market_data (MarketData): Type of market data. Default is MarketData.NULL.
-        ea_client (Optional[EAClientConfig]): Configuration for EAClient. Default is None.
-        rpyc (Optional[RpycConfig]): Configuration for RPYC. Default is None.
-        id (int): ID of the client. Default is 1.
-        mode (Mode): Mode of the client. Default is Mode.IPC.
-        market_data (MarketData): Type of market data. Default is MarketData.NULL.
-        ea_client (Optional[EAClientConfig]): Configuration for EAClient. Default is None.
-        rpyc (Optional[RpycConfig]): Configuration for RPYC. Default is None.
-        logger (Optional[Callable]): A logger instance for logging messages. Default is None.
+        host (str): Host address for the EAClient. Default is "127.0.0.1".
+        rest_port (int): Port number for REST API. Default is 15556.
+        stream_port (int): Port number for streaming data. Default is 15557.
+        encoding (str): Encoding type. Default is 'utf-8'.
+        use_socket (bool): Whether to use sockets for communication. Default is True.
+        enable_stream (bool): Flag to enable or disable streaming. Default is True.
+        callback (Optional[Callable]): Callback function to handle streamed data. Default is None.
+        debug (bool): Whether to enable debug messages. Default is False.
     """
-    id: int = 1
-    mode: Mode = Mode.IPC
-    ea_client: Optional[EAClientConfig] = None
-    rpyc: Optional[RpycConfig] = None
+    host: str = "127.0.0.1"
+    rest_port: int = 15556
+    stream_port: int = 15557
+    encoding: str = 'utf-8'
+    use_socket: bool = True
+    enable_stream: bool = True
+    callback: Optional[Callable] = None
     debug: bool = False
+
 
 class DockerizedMT5TerminalConfig(NautilusConfig, frozen=True):
     """
@@ -175,7 +176,11 @@ class MetaTrader5DataClientConfig(LiveDataClientConfig, frozen=True):
         all updates, including those where only the size has changed.
     dockerized_gateway : DockerizedMT5TerminalConfig, Optional
         The client's terminal container configuration.
-
+    id (int): ID of the client. Default is 1.
+    mode (Mode): Mode of the client. Default is Mode.IPC.
+    ea_client (Optional[EAClientConfig]): Configuration for EAClient. Default is None.
+    rpyc (Optional[RpycConfig]): Configuration for RPYC. Default is None.
+    debug (bool): Whether to enable debug messages. Default is False.
     """
 
     instrument_provider: MetaTrader5InstrumentProviderConfig = (
@@ -189,7 +194,11 @@ class MetaTrader5DataClientConfig(LiveDataClientConfig, frozen=True):
     market_data_type: MT5MarketDataType = MT5MarketDataType.REALTIME
     ignore_quote_tick_size_updates: bool = False
     dockerized_gateway: DockerizedMT5TerminalConfig | None = None
-
+    id: int = 1
+    mode: TerminalConnectionMode = TerminalConnectionMode.IPC
+    ea_client: Optional[EAClientConfig] = None
+    rpyc: Optional[RpycConfig] = None
+    debug: bool = False
 
 class MetaTrader5ExecClientConfig(LiveExecClientConfig, frozen=True):
     """
@@ -209,7 +218,11 @@ class MetaTrader5ExecClientConfig(LiveExecClientConfig, frozen=True):
         If the account_id is `None`, the system will fallback to use the `MT5_ACCOUNT_NUMBER` from environment variable.
     dockerized_gateway : DockerizedMT5TerminalConfig, Optional
         The client's terminal container configuration.
-
+    id (int): ID of the client. Default is 1.
+    mode (Mode): Mode of the client. Default is Mode.IPC.
+    ea_client (Optional[EAClientConfig]): Configuration for EAClient. Default is None.
+    rpyc (Optional[RpycConfig]): Configuration for RPYC. Default is None.
+    debug (bool): Whether to enable debug messages. Default is False.
     """
 
     instrument_provider: MetaTrader5InstrumentProviderConfig = (
@@ -221,3 +234,8 @@ class MetaTrader5ExecClientConfig(LiveExecClientConfig, frozen=True):
     mt5_client_id: int = 1
     account_id: str | None = None
     dockerized_gateway: DockerizedMT5TerminalConfig | None = None
+    id: int = 1
+    mode: TerminalConnectionMode = TerminalConnectionMode.IPC
+    ea_client: Optional[EAClientConfig] = None
+    rpyc: Optional[RpycConfig] = None
+    debug: bool = False

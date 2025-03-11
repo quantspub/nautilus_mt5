@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from decimal import Decimal
 from enum import Enum
 import math
@@ -16,8 +15,8 @@ UNSET_DECIMAL = Decimal(2**127 - 1)
 DOUBLE_INFINITY = math.inf
 MT5_VENUE: Final[Venue] = Venue("METATRADER_5")
 
-class Mode(Enum):
-    """Mode type.
+class TerminalConnectionMode(Enum):
+    """Terminal Connection Mode type.
     
     Includes 3 client modes: IPC, EA, and EA_IPC.
 
@@ -35,8 +34,8 @@ class Mode(Enum):
         """Returns the string representation of the enum value."""
         return self.value
     
-class PlatformType(Enum):
-    """Platform type.
+class TerminalPlatformType(Enum):
+    """Terminal Platform type.
     
     Includes 2 platform types: WINDOWS and LINUX.
     """

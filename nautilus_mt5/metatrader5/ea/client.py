@@ -4,29 +4,7 @@ from dataclasses import dataclass
 from .connection import Connection
 from .errors import ERROR_DICT
 
-@dataclass 
-class EAClientConfig:
-    """
-    Configuration for EAClient.
 
-    Parameters:
-        host (str): Host address for the EAClient. Default is "127.0.0.1".
-        rest_port (int): Port number for REST API. Default is 15556.
-        stream_port (int): Port number for streaming data. Default is 15557.
-        encoding (str): Encoding type. Default is 'utf-8'.
-        use_socket (bool): Whether to use sockets for communication. Default is True.
-        enable_stream (bool): Flag to enable or disable streaming. Default is True.
-        callback (Optional[Callable]): Callback function to handle streamed data. Default is None.
-        debug (bool): Whether to enable debug messages. Default is False.
-    """
-    host: str = "127.0.0.1"
-    rest_port: int = 15556
-    stream_port: int = 15557
-    encoding: str = 'utf-8'
-    use_socket: bool = True
-    enable_stream: bool = True
-    callback: Optional[Callable] = None
-    debug: bool = False
     
 class EAClient(Connection):
     """
