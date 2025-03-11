@@ -7,19 +7,12 @@ import threading
 import numpy as np
 from datetime import datetime, timezone
 from typing import Any, Callable, List, Optional, Union
-from typing import Any, Callable, List, Optional, Union
 from dataclasses import dataclass
 from mt5.metatrader5 import RpycConfig, MetaTrader5
 from metatrader5ext.ea import EAClientConfig, EAClient
 from nautilus_mt5.metatrader5.common import Mode, PlatformType
 from nautilus_mt5.metatrader5.errors import RPYC_SERVER_CONNECT_FAIL, ErrorInfo, TerminalError
 from mt5.logging import Logger as MTLogger
-from mt5.metatrader5 import RpycConfig, MetaTrader5
-from metatrader5ext.ea import EAClientConfig, EAClient
-from nautilus_mt5.metatrader5.common import Mode, PlatformType
-from nautilus_mt5.metatrader5.errors import RPYC_SERVER_CONNECT_FAIL, ErrorInfo, TerminalError
-from mt5.logging import Logger as MTLogger
-
 
 
 class MetaTrader5Ext:
