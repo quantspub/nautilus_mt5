@@ -238,7 +238,16 @@ class Execution(NamedTuple):
     time: int
     price: float
     quantity: float
-    side: Literal["BUY", "SELL"]
+    side: Literal[
+        "BUY", 
+        "SELL", 
+        "BUY_LIMIT", 
+        "SELL_LIMIT", 
+        "BUY_STOP", 
+        "SELL_STOP", 
+        "BUY_STOP_LIMIT", 
+        "SELL_STOP_LIMIT"
+    ]
     commission_report: CommissionReport
 
 
