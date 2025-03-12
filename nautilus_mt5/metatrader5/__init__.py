@@ -2,6 +2,7 @@ import platform
 # import importlib.util
 import sys
 import os
+from .config import MetaTrader5Config, RpycConnectionConfig, EAConnectionConfig
 
 current_dir = os.path.dirname(__file__)
 try:
@@ -28,5 +29,8 @@ finally:
 
 __all__ = [
     "MetaTrader5",
+    "MetaTrader5Config",
+    "RpycConnectionConfig",
+    "EAConnectionConfig",
 ]
 
