@@ -7,27 +7,52 @@ repository = "https://github.com/quantspub/nautilus_mt5"
 authors = ["Quants Pub <quantspub@gmail.com>"]
 requires-python = ">=3.11,<3.13"
 dependencies = [
-    "cython<=3.1.0a1",
     "docker>=7.1.0",
     "nautilus-trader>=1.212.0",
     "numba>=0.61.0",
     "numpy>=1.21.6,<=1.26.4",
+    "pandas>=2.2.3",
     "pyparsing>=3.2.1",
     "python-dotenv>=1.0.1",
     "rpyc>=6.0.1",
-    "setuptools>=64",
     "toml>=0.10.2",
+    "metatrader5>=5.0.4874; sys_platform == \"win32\"",
 ]
 
 [dependency-groups]
 dev = [
-    "pytest>=8.3.5",
+    "cython<=3.1.0a1",
+    "ruff>=0.9.10,<1.0.0",
+    "setuptools>=75",
 ]
-lint = [
-    "ruff>=0.9.10",
+test = [
+    "pytest>=8.3.5",
+    "pytest-asyncio==0.21.1",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100 
+
+exclude = [
+    ".benchmarks",
+    ".eggs",
+    ".git",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".venv",
+    "build",
+    "dist",
+    "venv",
+    "MQL5",
 ]
 
 [tool.pytest.ini_options]
-testpaths = [
-    "tests"
+testpaths = ["tests"]
+addopts = "-ra --new-first --failed-first --doctest-modules --doctest-glob=\"*.pyx\""
+asyncio_mode = "strict"
+filterwarnings = [
+    "ignore::UserWarning",
+    "ignore::DeprecationWarning",
 ]
