@@ -13,13 +13,18 @@ from nautilus_trader.model.identifiers import AccountId
 from nautilus_mt5.client import MetaTrader5Client
 from nautilus_mt5.constants import MT5_VENUE
 from nautilus_mt5.config import (
+    DockerizedMT5TerminalConfig,
     MetaTrader5DataClientConfig,
     MetaTrader5ExecClientConfig,
     MetaTrader5InstrumentProviderConfig,
+    TerminalConnectionMode,
+    RpycConnectionConfig,
+    EAConnectionConfig,
 )
 from nautilus_mt5.data import MetaTrader5DataClient
 from nautilus_mt5.execution import MetaTrader5ExecutionClient
 from nautilus_mt5.providers import MetaTrader5InstrumentProvider
+from nautilus_mt5.terminal import DockerizedMT5Terminal
 
 TERMINAL = None
 MT5_CLIENTS: dict[tuple, MetaTrader5Client] = {}
@@ -30,15 +35,16 @@ def get_cached_mt5_client(
     msgbus: MessageBus,
     cache: Cache,
     clock: LiveClock,
-    host: str = "127.0.0.1",
-    port: int | None = None,
+    mode: TerminalConnectionMode = TerminalConnectionMode.IPC,
+    rpyc_config: RpycConnectionConfig = RpycConnectionConfig(),
+    ea_config: EAConnectionConfig = EAConnectionConfig(),
     client_id: int = 1,
 ) -> MetaTrader5Client:
     """
     Retrieve or create a cached MetaTrader5Client using the provided key.
 
     Should a keyed client already exist within the cache, the function will return this instance. It's important
-    to note that the key comprises a combination of the host, port, and client_id.
+    to note that the key comprises a combination of the mode, rpyc_config, ea_config, and client_id.
 
     Parameters
     ----------
@@ -50,10 +56,12 @@ def get_cached_mt5_client(
         The cache for the client.
     clock: LiveClock
         The clock for the client.
-    host: str
-        The MT5 host to connect to.
-    port: int
-        The MT5 port to connect to.
+    mode: TerminalConnectionMode
+        The connection mode for the MT5 Terminal.
+    rpyc_config: RpycConnectionConfig
+        The RPyc connection configuration.
+    ea_config: EAConnectionConfig
+        The EA connection configuration.
     client_id: int
         The unique session identifier for the Terminal. A single host can support multiple connections;
         however, each must use a different client_id.
@@ -64,12 +72,11 @@ def get_cached_mt5_client(
 
     """
     PyCondition.not_none(
-        host,
-        "Please provide the `host` IP address for the MT5 Terminal.",
+        mode,
+        "Please provide the `mode` for the MT5 Terminal connection.",
     )
-    PyCondition.not_none(port, "Please provide the `port` for the MT5 Terminal.")
 
-    client_key: tuple = (host, port, client_id)
+    client_key: tuple = (mode, client_id)
 
     if client_key not in MT5_CLIENTS:
         client = MetaTrader5Client(
@@ -77,8 +84,87 @@ def get_cached_mt5_client(
             msgbus=msgbus,
             cache=cache,
             clock=clock,
-            host=host,
-            port=port,
+            mode=mode,
+            rpyc_config=rpyc_config,
+            ea_config=ea_config,
+            client_id=client_id,
+        )
+        client.start()
+        MT5_CLIENTS[client_key] = client
+    return MT5_CLIENTS[client_key]
+
+
+def get_cached_mt5_client_with_dockerized_gateway(
+    loop: asyncio.AbstractEventLoop,
+    msgbus: MessageBus,
+    cache: Cache,
+    clock: LiveClock,
+    mode: TerminalConnectionMode = TerminalConnectionMode.IPC,
+    rpyc_config: RpycConnectionConfig = RpycConnectionConfig(),
+    ea_config: EAConnectionConfig = EAConnectionConfig(),
+    client_id: int = 1,
+    dockerized_gateway: DockerizedMT5TerminalConfig | None = None,
+) -> MetaTrader5Client:
+    """
+    Retrieve or create a cached MetaTrader5Client using the provided key.
+
+    Should a keyed client already exist within the cache, the function will return this instance. It's important
+    to note that the key comprises a combination of the mode, rpyc_config, ea_config, and client_id.
+
+    Parameters
+    ----------
+    loop: asyncio.AbstractEventLoop
+        The event loop for the client.
+    msgbus: MessageBus
+        The message bus for the client.
+    cache: Cache
+        The cache for the client.
+    clock: LiveClock
+        The clock for the client.
+    mode: TerminalConnectionMode
+        The connection mode for the MT5 Terminal.
+    rpyc_config: RpycConnectionConfig
+        The RPyc connection configuration.
+    ea_config: EAConnectionConfig
+        The EA connection configuration.
+    client_id: int
+        The unique session identifier for the Terminal. A single host can support multiple connections;
+        however, each must use a different client_id.
+    dockerized_gateway: DockerizedMT5TerminalConfig, optional
+        The configuration for the dockerized gateway. If this is provided, Nautilus will oversee the docker
+        environment, facilitating the operation of the MT5 Terminal within.
+
+    Returns
+    -------
+    MetaTrader5Client
+
+    """
+    global TERMINAL
+    if dockerized_gateway:
+        # PyCondition.equal(mode, TerminalConnectionMode.IPC, "mode", "TerminalConnectionMode.IPC")
+        if TERMINAL is None:
+            TERMINAL = DockerizedMT5Terminal(dockerized_gateway)
+            TERMINAL.safe_start(wait=dockerized_gateway.timeout)
+            rpyc_config.port = TERMINAL.port
+        else:
+            rpyc_config.port = TERMINAL.port
+    else:
+        PyCondition.not_none(
+            mode,
+            "Please provide the `mode` for the MT5 Terminal connection.",
+        )
+
+    client_key: tuple = (mode, client_id)
+
+    if client_key not in MT5_CLIENTS:
+        client = MetaTrader5Client(
+            loop=loop,
+            msgbus=msgbus,
+            cache=cache,
+            clock=clock,
+            mode=mode,
+            rpyc_config=rpyc_config,
+            ea_config=ea_config,
             client_id=client_id,
         )
         client.start()
@@ -153,9 +239,10 @@ class MT5LiveDataClientFactory(LiveDataClientFactory):
             msgbus=msgbus,
             cache=cache,
             clock=clock,
-            host=config.mt5_host,
-            port=config.mt5_port,
-            client_id=config.mt5_client_id,
+            mode=config.mode,
+            rpyc_config=config.rpyc_config,
+            ea_config=config.ea_config,
+            client_id=config.client_id,
         )
 
         # Get instrument provider singleton
@@ -172,7 +259,7 @@ class MT5LiveDataClientFactory(LiveDataClientFactory):
             cache=cache,
             clock=clock,
             instrument_provider=provider,
-            mt5_client_id=config.mt5_client_id,
+            client_id=config.client_id,
             config=config,
             name=name,
         )
@@ -221,9 +308,10 @@ class MT5LiveExecClientFactory(LiveExecClientFactory):
             msgbus=msgbus,
             cache=cache,
             clock=clock,
-            host=config.mt5_host,
-            port=config.mt5_port,
-            client_id=config.mt5_client_id,
+            mode=config.mode,
+            rpyc_config=config.rpyc_config,
+            ea_config=config.ea_config,
+            client_id=config.client_id,
         )
 
         # Get instrument provider singleton

@@ -1,6 +1,7 @@
 // Constants
 #define NO_VALID_ID -1
 #define MAX_MSG_LEN 0xFFFFFF // 16Mb - 1byte
+#define CRLF "\r\n"
 
 // Unset values
 #define UNSET_INTEGER 2147483647
