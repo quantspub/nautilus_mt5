@@ -4,7 +4,7 @@ import functools
 from mt5 import MetaTrader5Ext as MetaTrader5Client
 
 from nautilus_trader.common.enums import LogColor
-from nautilus_mt5.client.common import BaseMixin
+from nautilus_mt5.common import BaseMixin
 from nautilus_mt5.data_types import TerminalConnectionState
 
 

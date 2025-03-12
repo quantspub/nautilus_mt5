@@ -5,6 +5,12 @@ from collections.abc import Callable
 import functools
 from typing import Annotated, Any
 import msgspec
+from nautilus_mt5.data_types import AccountOrderRef, BarData, CommissionReport, Execution, TerminalConnectionMode, TerminalPlatform
+from nautilus_mt5.metatrader5 import MetaTrader5, RpycConnectionConfig, EAConnectionConfig
+from nautilus_trader.cache.cache import Cache
+from nautilus_trader.common.component import LiveClock
+from nautilus_trader.common.component import Logger
+from nautilus_trader.common.component import MessageBus
 from nautilus_trader.model.data import BarType
 from nautilus_trader.model.identifiers import InstrumentId
 
@@ -437,3 +443,59 @@ class Requests(Base):
             future=self._req_id_to_future[req_id],
             result=self._req_id_to_result[req_id],
         )
+
+
+
+class BaseMixin:
+    """
+    Provide type hints for MetaTrader5Client Mixins.
+    """
+
+    # Client
+    is_running: bool
+    _loop: asyncio.AbstractEventLoop
+    _log: Logger
+    _cache: Cache
+    _clock: LiveClock
+    _msgbus: MessageBus
+    _mode: TerminalConnectionMode
+    _platform: TerminalPlatform
+    _rpyc_config: RpycConnectionConfig
+    _ea_config: EAConnectionConfig
+    _client_id: int
+    _requests: Requests
+    _subscriptions: Subscriptions
+    _event_subscriptions: dict[str, Callable]
+    _mt5_client: MetaTrader5
+    _is_mt5_connected: asyncio.Event
+    _start: Callable
+    _startup: Callable
+    _reset: Callable
+    _stop: Callable
+    _resume: Callable
+    _degrade: Callable
+    _end_request: Callable
+    _await_request: Callable
+    _next_req_id: Callable
+    _resubscribe_all: Callable
+    _create_task: Callable
+
+    # Account
+    accounts: Callable
+
+    # Connection
+    _reconnect_attempts: int
+    _reconnect_delay: int
+    _max_reconnect_attempts: int
+    _indefinite_reconnect: bool
+
+    # MarketData
+    _bar_type_to_last_bar: dict[str, BarData | None]
+    _order_id_to_order_ref: dict[int, AccountOrderRef]
+
+    # Order
+    _next_valid_order_id: int
+    _exec_id_details: dict[
+        str,
+        dict[str, Execution | (CommissionReport | str)],
+    ]
