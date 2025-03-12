@@ -6,12 +6,7 @@ from nautilus_trader.config import LiveDataClientConfig
 from nautilus_trader.config import LiveExecClientConfig
 from nautilus_trader.config import NautilusConfig
 
-from nautilus_mt5.config import MarketDataSubscription  
-# from nautilus_mt5.common import (
-#     MarketDataType as MT5MarketDataType,
-#     TerminalConnectionMode,
-# )
-# from nautilus_mt5.common import MT5Symbol
+from nautilus_mt5.data_types import MarketDataSubscription, TerminalConnectionMode, MT5Symbol
 
 class RpycConfig(NautilusConfig, frozen=True):
     """
