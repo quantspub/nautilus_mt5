@@ -11,11 +11,15 @@ from nautilus_trader.common.component import MessageBus
 from nautilus_trader.common.enums import LogColor
 from nautilus_trader.model.identifiers import ClientId
 
+from nautilus_mt5.client.account import MetaTrader5ClientAccountMixin
+from nautilus_mt5.client.connection import MetaTrader5ClientConnectionMixin
 from nautilus_mt5.constants import MT5_VENUE
 from nautilus_mt5.data_types import TerminalConnectionMode
 from nautilus_mt5.metatrader5 import RpycConnectionConfig, EAConnectionConfig
 
-class MetaTrader5Client(Component):
+class MetaTrader5Client(Component,
+                        MetaTrader5ClientConnectionMixin,
+                        MetaTrader5ClientAccountMixin,):
     """
     A client component for interfacing with the MetaTrader 5 Terminal.
 
