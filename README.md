@@ -1,6 +1,6 @@
 # Nautilus MetaTrader 5 Adapter 🌟
 
-This adapter allows for seamless integration between the Nautilus Trader and MetaTrader 5, providing capabilities for market data retrieval, order execution, and account management through the MetaTrader 5 Terminal using either IPC for Windows, RPyC for Linux, or Sockets for EA (suitable for streaming). Whether you're a beginner or an expert, it significantly enhances the MetaTrader 5 ecosystem, making it an essential tool for sophisticated trading automation and in-depth market analysis 📈.
+This adapter allows for seamless integration between the Nautilus Trader and MetaTrader 5, providing capabilities for market data retrieval, order execution, and account management through the MetaTrader 5 Terminal using either IPC for Windows, RPyC for Linux, or Sockets for EA (suitable for streaming).
 
 ## Client Modes 🛠️
 
