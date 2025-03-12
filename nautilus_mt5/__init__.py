@@ -1,5 +1,3 @@
 """
-Provides an API integration for Metatrader 5.
-
-Support only CFDs currently
+Provides an API integration for the MetaTrader 5 Trading Platform.
 """
