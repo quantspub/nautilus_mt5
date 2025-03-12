@@ -1,7 +1,7 @@
 import asyncio
 import functools
 
-from mt5 import MetaTrader5Ext as MetaTrader5Client
+from nautilus_mt5.metatrader5 import MetaTrader5, EAClient
 
 from nautilus_trader.common.enums import LogColor
 from nautilus_mt5.common import BaseMixin
