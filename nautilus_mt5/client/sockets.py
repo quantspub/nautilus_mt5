@@ -1,6 +1,5 @@
 import asyncio
 import itertools
-import os
 from collections.abc import Callable
 import msgspec
 from nautilus_trader.common.component import Logger
