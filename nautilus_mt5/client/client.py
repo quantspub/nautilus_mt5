@@ -24,6 +24,8 @@ class MetaTrader5Client(Component):
     to support event-driven responses and custom component behavior.
 
     It offers an IPC/RPYC/Sockets client for MetaTrader 5.
+
+    In EA_IPC mode, it uses IPC/RPYC for request-reply and EA Sockets for streaming.
     """
     def __init__(self,         
                 loop: asyncio.AbstractEventLoop,
@@ -49,3 +51,24 @@ class MetaTrader5Client(Component):
         self._rpyc_config = rpyc_config
         self._ea_config = ea_config
         self._client_id = client_id
+
+    def _start(self) -> None:
+        """
+        Start the client.
+
+        This method is called when the client is first initialized and when the client
+        is reset. It sets up the client and starts the connection watchdog, incoming
+        message reader, and internal message queue processing tasks.
+
+        """
+        if not self._loop.is_running():
+            self._log.warning("Started when loop is not running.")
+            self._loop.run_until_complete(self._start_async())
+        else:
+            self._create_task(self._start_async())
+    
+    def _stop(self) -> None:
+        """
+        Stop the client and cancel running tasks.
+        """
+        self._create_task(self._stop_async())
