@@ -12,6 +12,7 @@ from nautilus_trader.common.enums import LogColor
 from nautilus_trader.model.identifiers import ClientId
 
 from nautilus_mt5.constants import MT5_VENUE
+from nautilus_mt5.data_types import TerminalConnectionMode
 from nautilus_mt5.metatrader5 import RpycConnectionConfig, EAConnectionConfig
 
 class MetaTrader5Client(Component):
@@ -29,6 +30,7 @@ class MetaTrader5Client(Component):
                 msgbus: MessageBus,
                 cache: Cache,
                 clock: LiveClock,
+                mode: TerminalConnectionMode = TerminalConnectionMode.IPC,
                 rpyc_config: RpycConnectionConfig = RpycConnectionConfig(),
                 ea_config: EAConnectionConfig = EAConnectionConfig(),
                 client_id: int = 1,
@@ -43,6 +45,7 @@ class MetaTrader5Client(Component):
         # Config
         self._loop = loop
         self._cache = cache
+        self._mode = mode
         self._rpyc_config = rpyc_config
         self._ea_config = ea_config
         self._client_id = client_id

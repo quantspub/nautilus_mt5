@@ -83,8 +83,8 @@ class MetaTrader5DataClientConfig(LiveDataClientConfig, frozen=True):
         ignore_quote_tick_size_updates (bool): Whether to ignore quote tick size updates. Default is False.
         mode (TerminalConnectionMode): The connection mode. Default is TerminalConnectionMode.IPC.
         dockerized_gateway (DockerizedMT5TerminalConfig | None): The client's terminal container configuration. Default is None.
-        ea_connection (Optional[EAConnectionConfig]): Configuration for EAClient. Default is None.
-        rpyc_connection (Optional[RpycConnectionConfig]): Configuration for RPYC. Default is None.
+        ea_config (Optional[EAConnectionConfig]): Configuration for EAClient. Default is None.
+        rpyc_config (Optional[RpycConnectionConfig]): Configuration for RPYC. Default is None.
         instrument_provider (MetaTrader5InstrumentProviderConfig): Configuration for instrument provider.
     """
     client_id: int = 1
@@ -93,8 +93,8 @@ class MetaTrader5DataClientConfig(LiveDataClientConfig, frozen=True):
     ignore_quote_tick_size_updates: bool = False
     mode: TerminalConnectionMode = TerminalConnectionMode.IPC
     dockerized_gateway: DockerizedMT5TerminalConfig | None = None
-    ea_connection: Optional[EAConnectionConfig] = None
-    rpyc_connection: Optional[RpycConnectionConfig] = None
+    ea_config: Optional[EAConnectionConfig] = None
+    rpyc_config: Optional[RpycConnectionConfig] = None
     instrument_provider: MetaTrader5InstrumentProviderConfig = (
         MetaTrader5InstrumentProviderConfig()
     )
@@ -109,8 +109,8 @@ class MetaTrader5ExecClientConfig(LiveExecClientConfig, frozen=True):
         account_id (str | None): The account ID for MetaTrader 5 instance. Default is None.
         mode (TerminalConnectionMode): The connection mode. Default is TerminalConnectionMode.IPC.
         dockerized_gateway (DockerizedMT5TerminalConfig | None): The client's terminal container configuration. Default is None.
-        ea_connection (Optional[EAConnectionConfig]): Configuration for EAClient. Default is None.
-        rpyc_connection (Optional[RpycConnectionConfig]): Configuration for RPYC. Default is None.
+        ea_config (Optional[EAConnectionConfig]): Configuration for EAClient. Default is None.
+        rpyc_config (Optional[RpycConnectionConfig]): Configuration for RPYC. Default is None.
         request_account_state_secs (NonNegativeInt): The request interval (seconds) for account state checks. Default is 300.
         instrument_provider (MetaTrader5InstrumentProviderConfig): Configuration for instrument provider.
     """
@@ -118,8 +118,8 @@ class MetaTrader5ExecClientConfig(LiveExecClientConfig, frozen=True):
     account_id: str | None = None
     mode: TerminalConnectionMode = TerminalConnectionMode.IPC
     dockerized_gateway: DockerizedMT5TerminalConfig | None = None
-    ea_connection: Optional[EAConnectionConfig] = None
-    rpyc_connection: Optional[RpycConnectionConfig] = None
+    ea_config: Optional[EAConnectionConfig] = None
+    rpyc_config: Optional[RpycConnectionConfig] = None
     request_account_state_secs: NonNegativeInt = 300
     instrument_provider: MetaTrader5InstrumentProviderConfig = (
         MetaTrader5InstrumentProviderConfig()
