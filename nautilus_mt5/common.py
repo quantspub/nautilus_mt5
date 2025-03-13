@@ -465,8 +465,10 @@ class BaseMixin:
     _requests: Requests
     _subscriptions: Subscriptions
     _event_subscriptions: dict[str, Callable]
+    _conn_state: int
     _terminal_connection_mode: TerminalConnectionMode
     _terminal_platform: TerminalPlatform
+    _terminal_info: Dict[str, Any]
     _mt5_client: Dict[str, Optional[Union[MetaTrader5, EAClient]]]
     _is_mt5_connected: asyncio.Event
     _start: Callable

@@ -58,3 +58,21 @@ class TerminalPlatform(Enum):
     def to_str(self) -> str:
         """Returns the string representation of the enum value."""
         return self.value
+    
+class ErrorInfo:
+    """Class to represent an error with a code and message."""
+    
+    def __init__(self, code: int, msg: str):
+        self._code = code
+        self._msg = msg
+
+    def __str__(self) -> str:
+        return f"ErrorInfo(code={self._code}, msg={self._msg})"
+
+    def code(self) -> int:
+        """Returns the error code."""
+        return self._code
+
+    def msg(self) -> str:
+        """Returns the error message."""
+        return self._msg

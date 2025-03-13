@@ -1,11 +1,9 @@
 import asyncio
 import itertools
-from collections.abc import Callable
+from typing import Dict, List, Optional, Callable, Union
 import msgspec
 from nautilus_trader.common.component import Logger
-from nautilus_trader.core.nautilus_pyo3 import SocketClient
-from nautilus_trader.core.nautilus_pyo3 import SocketConfig
-
+from nautilus_trader.core.nautilus_pyo3 import SocketClient, SocketConfig
 
 HOST = "127.0.0.1"
 REST_PORT = 15556
@@ -14,178 +12,362 @@ CRLF = b"\r\n"
 ENCODING = "utf-8"
 UNIQUE_ID = itertools.count()
 
+def make_message(command: str, sub_command: str, parameters: List[str]) -> str:
+        """
+        Constructs a message in the format FXXX^Y^<parameters>.
 
+        :param command: The command identifier (e.g., "F123").
+        :param sub_command: The sub-command or parameter (e.g., "Y").
+        :param parameters: A list of additional parameters (e.g., ["param1", "param2"]).
+        :return: A formatted message string.
+        """
+        try:
+            # Join the parameters with the '^' delimiter
+            params_str = '^'.join(parameters)
+            
+            # Construct the message in the required format
+            message = f"{command}^{sub_command}^{params_str}"
+            
+            return message
+        
+        except Exception as e:
+            # Handle any errors that occur during message construction
+            return f"Error: {str(e)}"
+    
+def parse_response_message(message: str) -> Union[Dict[str, Union[str, List[str]]], Dict[str, str]]:
+        """
+        Parses response message in the format FXXX^Y^<parameters>.
+        The <parameters> part contains the server's response data.
+        Handles hidden '^' delimiters and ensures data is properly extracted.
 
-class MetaTrader5StreamClient:
+        :param message: The response or message string to parse.
+        :return: A dictionary containing the command, sub_command, and data.
+        """
+        try:
+            # Split the response or message by the '^' delimiter
+            parts = message.split('^')
+            
+            # Ensure the response or message has at least three parts
+            if len(parts) < 3:
+                raise ValueError("Invalid format. Expected at least three parts separated by '^'.")
+            
+            # Extract the command and sub-command
+            command = parts[0]
+            sub_command = parts[1]
+            
+            # Extract the data (all remaining parts)
+            data = parts[2:]
+            
+            # Find the index of the last non-empty data element
+            last_non_empty_index = len(data) - 1
+            while last_non_empty_index >= 0 and data[last_non_empty_index] == '':
+                last_non_empty_index -= 1
+            
+            # Slice the data list up to the last non-empty index
+            data = data[:last_non_empty_index + 1]
+            
+            # Check for hidden '^' delimiters in data (empty strings in the middle)
+            if '' in data:
+                raise ValueError("Invalid format. Hidden '^' delimiters detected in data.")
+            
+            # Return the parsed components as a dictionary
+            response = {
+                'command': command,
+                'sub_command': sub_command,
+                'data': data
+            }
+            return response
+        
+        except Exception as e:
+            # Handle any errors that occur during parsing
+            return {
+                'error': str(e)
+            }
+                
+class MetaTrader5SocketClient:
     """
-    Provides a streaming client for MetaTrader 5.
+    Manages the connection to a MetaTrader 5 server for streaming communication using NautilusTrader's SocketClient.
 
-    TODO: Consider Using EAClient
+    Attributes:
+        host (str): The server host address.
+        port (int): The port for streaming communication.
+        crlf (bytes): The delimiter used for message separation.
+        encoding (str): The encoding used for message communication.
+        handler (Callable[[bytes], None]): The callback function for handling incoming messages.
+        client (Optional[SocketClient]): The socket client instance.
+        log (Logger): Logger instance for logging messages.
+        unique_id (int): Unique identifier for the client instance.
     """
+    host: str
+    rest_port: int
+    stream_port: int
+    rest_client: Optional[SocketClient]
+    stream_client: Optional[SocketClient]
+    encoding: str
+    message_handler: Optional[Callable[[str], None]]
+    is_stream_running: bool
+    debug: bool
 
     def __init__(
         self,
-        message_handler: Callable[[bytes], None],
-        host: str | None = HOST,
-        port: int | None = None,
-        crlf: bytes | None = None,
-        encoding: str | None = None,
+        message_handler: Callable[[str], None],
+        host: str = HOST,
+        rest_port: int = REST_PORT,
+        stream_port: int = STREAM_PORT,
+        crlf: bytes = CRLF,
+        encoding: str = ENCODING,
     ) -> None:
+        self.host = host
+        self.rest_port = rest_port
+        self.stream_port = stream_port
+        self.crlf = crlf
+        self.encoding = encoding
         self.handler = message_handler
-        self.host = host or HOST
-        self.port = port or STREAM_PORT
-        self.crlf = crlf or CRLF
-        self.encoding = encoding or ENCODING
-
-        self._loop = asyncio.get_event_loop()
-        self._client: SocketClient | None = None
-        self._log = Logger(type(self).__name__)
-
+        self.rest_client: Optional[SocketClient] = None
+        self.stream_client: Optional[SocketClient] = None
+        self.log = Logger(type(self).__name__)
         self.unique_id = next(UNIQUE_ID)
+        self.is_stream_running = False
+        self.debug = False
 
-    async def connect(self):
-        if self._client is not None and self._client.is_active():
-            self._log.info("Socket already connected")
+    async def _connect_rest_client(self) -> None:
+        """
+        Establishes a connection to the MetaTrader 5 REST server.
+        """
+        if self.rest_client is not None and self.rest_client.is_active():
+            self.log.info("REST client already connected")
             return
 
-        self._log.info("Connecting MetaTrader 5 socket client...")
+        self.log.info("Connecting MetaTrader 5 REST socket client...")
         config = SocketConfig(
-            url=f"{self.host}:{self.port}",
+            url=f"{self.host}:{self.rest_port}",
             ssl=False,
             suffix=self.crlf,
             handler=self.handler,
-            heartbeat=(10, msgspec.json.encode({"op": "heartbeat"})),
         )
-        self._client = await SocketClient.connect(
-            config,
-            post_connection=None,  # this method itself needs the `self._client` reference
-            post_reconnection=self.post_reconnection,
+        self.rest_client = await SocketClient.connect(            
+                                config=config,            
+                                post_connection=self.post_rest_connection,
+                                post_reconnection=self.post_rest_reconnection)
+        self.log.info("Connected")
+        
+    async def _connect_stream_client(self) -> None:
+        """
+        Establishes a connection to the MetaTrader 5 stream server.
+        """
+        if self.stream_client is not None and self.stream_client.is_active():
+            self.log.info("Stream client already connected")
+            return
+
+        self.log.info("Connecting MetaTrader 5 stream socket client...")
+        config = SocketConfig(
+            url=f"{self.host}:{self.stream_port}",
+            ssl=False,
+            suffix=self.crlf,
+            handler=self.handler,
         )
+        self.stream_client = await SocketClient.connect(
+            config=config,            
+            post_connection=self.post_stream_connection,
+            post_reconnection=self.post_stream_reconnection)
+        self.log.info("Connected")
+        
+    async def connect(self) -> None:
+        """
+        Establishes a connection to the MetaTrader 5 server.
+        """
+        self.log.info("Connecting MetaTrader 5 socket client...")
+        await self._connect_rest_client()
+        await self._connect_stream_client()
 
-        await self._post_connection()
+        await self.post_connection()
+        self.log.info("Connected")
 
-        self._log.info("Connected")
+    async def reconnect(self) -> None:
+        """
+        Re-establishes the connection to the MetaTrader 5 server.
+        """
+        if self.rest_client is None or self.stream_client is None:
+            self.log.warning("Cannot reconnect: not connected")
+            return
 
-    async def reconnect(self):
-        try:
-            if self._client is None:
-                self._log.warning("Cannot reconnect: not connected")
-                return
+        if not self.rest_client.is_active() and not self.stream_client.is_active():
+            self.log.warning(f"Cannot reconnect: rest client in {self.rest_client.mode()} mode | stream client in {self.stream_client.mode()} mode")
+            return
 
-            if not self._client.is_active():
-                self._log.warning(f"Cannot reconnect: client in {self._client.mode()} mode")
-                return
+        self.log.info("Reconnecting...")
+        await self.rest_client.reconnect()
+        await self.stream_client.reconnect()
+        await asyncio.sleep(0.1)
+        self.log.info("Reconnected")
 
-            self._log.info("Reconnecting...")
+    async def disconnect(self) -> None:
+        """
+        Closes the connection to the MetaTrader 5 server.
+        """
+        if self.rest_client is None or self.stream_client is None:
+            self.log.warning("Cannot disconnect: not connected")
+            return
 
-            await self._client.reconnect()
-            await asyncio.sleep(0.1)
-
-            self._log.info("Reconnected")
-        except asyncio.CancelledError:
-            self._log.warning("Canceled task 'reconnect'")
-
-    async def disconnect(self):
-        try:
-            if self._client is None:
-                self._log.warning("Cannot disconnect: not connected")
-                return
-
-            self._log.info(f"Disconnecting from {self._client.mode()} mode...")
-
-            await self._client.close()
-
-            self._log.info("Disconnected")
-        except asyncio.CancelledError:
-            self._log.warning("Canceled task 'disconnect'")
+        self.log.info(f"Disconnecting from rest client in {self.rest_client.mode()} mode | stream client in {self.stream_client.mode()} mode...")
+        await self.rest_client.close()
+        await self.stream_client.close()
+        self.is_stream_running = False
+        self.log.info("Disconnected")
 
     def is_active(self) -> bool:
         """
-        Check whether the client connection is active.
+        Checks whether the client connection is active.
 
-        Returns
-        -------
-        bool
-
+        Returns:
+            bool: True if active, False otherwise.
         """
-        if self._client is None:
-            return False
-        return self._client.is_active()
+        return (self.rest_client.is_active() if self.rest_client else False) or \
+               (self.stream_client.is_active() if self.stream_client else False)
 
     def is_reconnecting(self) -> bool:
         """
-        Check whether the client is reconnecting.
+        Checks whether the client is reconnecting.
 
-        Returns
-        -------
-        bool
-
+        Returns:
+            bool: True if reconnecting, False otherwise.
         """
-        if self._client is None:
-            return False
-        return self._client.is_reconnecting()
+        return (self.rest_client.is_reconnecting() if self.rest_client else False) or \
+               (self.stream_client.is_reconnecting() if self.stream_client else False)
 
     def is_disconnecting(self) -> bool:
         """
-        Check whether the client is disconnecting.
+        Checks whether the client is disconnecting.
 
-        Returns
-        -------
-        bool
-
+        Returns:
+            bool: True if disconnecting, False otherwise.
         """
-        if self._client is None:
-            return False
-        return self._client.is_disconnecting()
+        return (self.rest_client.is_disconnecting() if self.rest_client else False) or \
+               (self.stream_client.is_disconnecting() if self.stream_client else False)
 
     def is_closed(self) -> bool:
         """
-        Check whether the client is closed.
+        Checks whether the client is closed.
 
-        Returns
-        -------
-        bool
-
+        Returns:
+            bool: True if closed, False otherwise.
         """
-        if self._client is None:
-            return True
-        return self._client.is_closed()
+        return (self.rest_client.is_closed() if self.rest_client else True) and \
+               (self.stream_client.is_closed() if self.stream_client else True)
 
-    async def _post_connection(self) -> None:
+    async def send(self, message: str) -> None:
+        """
+        Sends a message to the MetaTrader 5 server.
+
+        Args:
+            message (str): The message to send.
+        """
+        if self.rest_client is None:
+            raise RuntimeError("Cannot send message: no REST client")
+        
+        if self.stream_client is None:
+            raise RuntimeError("Cannot send message: no stream client")
+
+        await self.rest_client.send(message.encode(self.encoding))
+        
+    async def send_message(self, message: str) -> str:
+        """
+        Sends a request command/message to the server and returns the decoded response.
+
+        :param message: The message to send.
+        :return: The server's response as a decoded string.
+        """
+        try:
+            reader, writer = await asyncio.open_connection(self.host, self.rest_port)
+            writer.write(message.encode(self.encoding))
+            await writer.drain()
+            response = await reader.read(1024)
+            writer.close()
+            await writer.wait_closed()
+            if self.debug:
+                print(f"Sent: {message}, Received: {response.decode(self.encoding)}")
+            return response.decode(self.encoding)
+        except Exception as e:
+            if self.debug:
+                print(f"Error: {e}")
+            return f"Error: {e}"
+
+    def _listen_stream(self) -> None:
+        """ Internal method to listen for streaming data. """
+        try:
+            while self.is_stream_running and self.stream_client is not None:
+                data = self.stream_client.recv(1024)
+                if data:
+                    decoded_data = data.decode(self.encoding)
+                    if self.debug:
+                        self.log.debug(f"Stream Update: {decoded_data}")
+                    if self.message_handler:
+                        self.message_handler(decoded_data)
+        except Exception as e:
+            print(f"Streaming error: {e}")
+
+    async def post_rest_connection(self) -> None:
+        """
+        Actions to be performed after establishing a REST connection.
+        """
         pass
-
-    def post_connection(self) -> None:
+    
+    async def post_stream_connection(self) -> None:
         """
-        Actions to be performed post connection.
+        Actions to be performed after establishing a stream connection.
+        
+        Default Connects to the streaming server and continuously listens for updates.
         """
+        try:
+            self.is_stream_running = True
+            await asyncio.to_thread(self._listen_stream)
+        except Exception as e:
+            self.log.error(f"Streaming connection error: {e}")
+        
+    async def post_connection(self) -> None:
+        """
+        Actions to be performed after establishing a connection.
+        """
+        pass
+    
+    def post_rest_reconnection(self) -> None:
+        """
+        Actions to be performed after re-establishing a REST connection.
+        """
+        pass
+    
+    def post_stream_reconnection(self) -> None:
+        """
+        Actions to be performed after re-establishing a stream connection.
+        """
+        pass
 
     def post_reconnection(self) -> None:
         """
-        Actions to be performed post connection.
+        Actions to be performed after re-establishing a connection.
         """
+        pass
 
     def post_disconnection(self) -> None:
         """
-        Actions to be performed post disconnection.
+        Actions to be performed after disconnecting.
         """
+        pass
 
-    async def send(self, message: bytes) -> None:
-        try:
-            if self._client is None:
-                raise RuntimeError("Cannot send message: no client")
+    def auth_message(self) -> dict:
+        """
+        Constructs an authentication message.
 
-            await self._client.send(message)
-        except asyncio.CancelledError:
-            self._log.warning("Canceled task 'send'")
-
-    def auth_message(self):
+        Returns:
+            dict: The authentication message.
+        """
         return {
             "op": "authentication",
             "id": self.unique_id,
         }
 
 
-class MetaTrader5OrderStreamClient(MetaTrader5StreamClient):
+class MetaTrader5OrderStreamClient(MetaTrader5SocketClient):
     """
     Provides an order stream client for MetaTrader5.
     """
@@ -233,7 +415,7 @@ class MetaTrader5OrderStreamClient(MetaTrader5StreamClient):
                 await asyncio.sleep(1.0)
 
 
-class MetaTrader5MarketStreamClient(MetaTrader5StreamClient):
+class MetaTrader5MarketStreamClient(MetaTrader5SocketClient):
     """
     Provides a MetaTrader5 market stream client.
     """

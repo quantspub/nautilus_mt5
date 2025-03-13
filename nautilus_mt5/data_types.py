@@ -127,7 +127,38 @@ class MT5SymbolDetails(NautilusConfig, frozen=True, repr_omit_defaults=True):
     page: Optional[str] = None
     path: Optional[str] = None
 
+class MT5OrderTags(NautilusConfig, frozen=True, repr_omit_defaults=True):
+    """
+    Used to attach to Nautilus Order Tags for MT5 specific order parameters.
+    """
 
+    # Pre-order and post-order Margin analysis with commission
+    whatIf: bool = False
+
+    # Order Group conditions (One)
+    ocaGroup: str = ""  # one cancels all group name
+    ocaType: int = 0  # 1 = CANCEL_WITH_BLOCK, 2 = REDUCE_WITH_BLOCK, 3 = REDUCE_NON_BLOCK
+
+    # Order Group conditions (All)
+    allOrNone: bool = False
+
+    # Time conditions
+    activeStartTime: str = ""  # for GTC orders, Format: "%Y%m%d %H:%M:%S %Z"
+    activeStopTime: str = ""  # for GTC orders, Format: "%Y%m%d %H:%M:%S %Z"
+    goodAfterTime: str = ""  # Format: "%Y%m%d %H:%M:%S %Z"
+
+    # extended order fields
+    blockOrder = False  # If set to true, specifies that the order is an ISE Block order.
+    sweepToFill = False
+    outsideRth: bool = False
+
+    @property
+    def value(self):
+        return f"MT5OrderTags:{self.json().decode()}"
+
+    def __str__(self):
+        return self.value
+    
 class AccountOrderRef(NamedTuple):
     account_id: str  # Account ID/Login Number of the account
     order_id: str
