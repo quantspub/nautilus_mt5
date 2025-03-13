@@ -25,7 +25,8 @@ class TerminalConnectionState(Enum):
 
     DISCONNECTED = 0
     CONNECTED = 1
-    AUTHENTICATED = 2
+    CONNECTING = 2
+    REDIRECTED = 3
     
 class TerminalConnectionMode(Enum):
     """Terminal Connection Mode type.

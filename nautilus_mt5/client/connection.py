@@ -96,23 +96,23 @@ class MetaTrader5ClientConnectionMixin(BaseMixin):
         """
         Create and return the appropriate MetaTrader5 client based on the connection mode.
         """
-        if self._terminal_mode == TerminalConnectionMode.IPC:
+        if self._terminal_connection_mode == TerminalConnectionMode.IPC:
             return self._create_ipc_client()
-        elif self._terminal_mode == TerminalConnectionMode.EA:
+        elif self._terminal_connection_mode == TerminalConnectionMode.EA:
             return self._create_ea_client()
-        elif self._terminal_mode == TerminalConnectionMode.EA_IPC:
+        elif self._terminal_connection_mode == TerminalConnectionMode.EA_IPC:
             return self._create_ea_ipc_client()
         else:
-            raise ValueError(f"Invalid connection mode: {self._terminal_mode}")
+            raise ValueError(f"Invalid connection mode: {self._terminal_connection_mode}")
 
     def _create_ipc_client(self):
         """
         Create and return a MetaTrader5 client for IPC mode.
         """
         if self._terminal_platform != TerminalPlatform.WINDOWS:
-            client = MetaTrader5(host=self._rpyc_config.host, 
-                               port=self._rpyc_config.port,
-                               keep_alive=self._rpyc_config.keep_alive)
+            client = MetaTrader5(host=self._mt5_config['rpyc'].host, 
+                               port=self._mt5_config['rpyc'].port,
+                               keep_alive=self._mt5_config['rpyc'].keep_alive)
         else:
             client = MetaTrader5()
         
@@ -129,9 +129,9 @@ class MetaTrader5ClientConnectionMixin(BaseMixin):
         """
         Create and return a MetaTrader5 client for EA_IPC mode.
         """
-        mt5_client = MetaTrader5(host=self._rpyc_config.host, 
-                                 port=self._rpyc_config.port,
-                                 keep_alive=self._rpyc_config.keep_alive) if self._terminal_platform != TerminalPlatform.WINDOWS else MetaTrader5()
+        mt5_client = MetaTrader5(host=self._mt5_config['rpyc'].host, 
+                                 port=self._mt5_config['rpyc'].port,
+                                 keep_alive=self._mt5_config['rpyc'].keep_alive) if self._terminal_platform != TerminalPlatform.WINDOWS else MetaTrader5()
         ea_client = EAClient(self._ea_config)
         return {'mt5': mt5_client, 'ea': ea_client}
 
