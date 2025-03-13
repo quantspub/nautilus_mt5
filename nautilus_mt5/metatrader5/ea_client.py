@@ -4,6 +4,7 @@ from datetime import datetime
 from nautilus_mt5.metatrader5.config import EAConnectionConfig
 from nautilus_mt5.metatrader5.ea_sockets import EASocketConnection
 from nautilus_mt5.metatrader5.errors import EA_ERROR_DICT
+from nautilus_mt5.metatrader5.utils import make_message, parse_response_message
 
 
     
@@ -30,7 +31,7 @@ class EAClient(EASocketConnection):
         :param expected_code: The expected response code.
         :return: A dictionary of response parts if the response matches the expected code, otherwise None.
         """
-        parsed_response = self.parse_response_message(response)
+        parsed_response = parse_response_message(response)
         if 'error' in parsed_response:
             if self.debug:
                 print(parsed_response)
@@ -56,7 +57,7 @@ class EAClient(EASocketConnection):
 
         :return: True if the connection is successful, otherwise False.
         """
-        message = self.make_message('F000', '1', [])
+        message = make_message('F000', '1', [])
         self.return_error = ''
 
         try:
@@ -80,7 +81,7 @@ class EAClient(EASocketConnection):
 
         :return: A dictionary containing static account information if successful, otherwise None.
         """
-        message = self.make_message('F001', '1', [])
+        message = make_message('F001', '1', [])
         self.return_error = ''
 
         try:
@@ -118,7 +119,7 @@ class EAClient(EASocketConnection):
 
         :return: A dictionary containing dynamic account information if successful, otherwise None.
         """
-        message = self.make_message('F002', '1', [])
+        message = make_message('F002', '1', [])
         self.return_error = ''
 
         try:
@@ -153,7 +154,7 @@ class EAClient(EASocketConnection):
         :param instrument_name: The name of the instrument.
         :return: A dictionary containing the last tick information if successful, otherwise None.
         """
-        message = self.make_message('F020', '2', [instrument_name])
+        message = make_message('F020', '2', [instrument_name])
         self.return_error = ''
 
         try:
@@ -189,7 +190,7 @@ class EAClient(EASocketConnection):
 
         :return: A dictionary containing the broker server time if successful, otherwise None.
         """
-        message = self.make_message('F005', '1', [])
+        message = make_message('F005', '1', [])
         self.return_error = ''
 
         try:
@@ -227,7 +228,7 @@ class EAClient(EASocketConnection):
         :param instrument_name: The name of the instrument.
         :return: A dictionary containing the instrument information if successful, otherwise None.
         """
-        message = self.make_message('F003', '2', [instrument_name])
+        message = make_message('F003', '2', [instrument_name])
         self.return_error = ''
 
         try:
@@ -267,7 +268,7 @@ class EAClient(EASocketConnection):
 
         :return: True if connected, otherwise False.
         """
-        message = self.make_message('F011', '1', [])
+        message = make_message('F011', '1', [])
         self.return_error = ''
 
         try:
@@ -292,7 +293,7 @@ class EAClient(EASocketConnection):
 
         :return: 'MT4' or 'MT5' if successful, otherwise None.
         """
-        message = self.make_message('F012', '1', [])
+        message = make_message('F012', '1', [])
         self.return_error = ''
 
         try:
@@ -319,7 +320,7 @@ class EAClient(EASocketConnection):
 
         :return: 'Demo' or 'Licensed' if successful, otherwise None.
         """
-        message = self.make_message('F006', '1', [])
+        message = make_message('F006', '1', [])
         self.return_error = ''
 
         try:
@@ -347,7 +348,7 @@ class EAClient(EASocketConnection):
         :param instrument_name: The name of the instrument.
         :return: True if trading is allowed, otherwise False.
         """
-        message = self.make_message('F008', '2', [instrument_name])
+        message = make_message('F008', '2', [instrument_name])
         self.return_error = ''
 
         try:
@@ -372,7 +373,7 @@ class EAClient(EASocketConnection):
 
         :return: A list of instrument names if successful, otherwise None.
         """
-        message = self.make_message('F007', '2', [])
+        message = make_message('F007', '2', [])
         self.return_error = ''
 
         try:
@@ -401,7 +402,7 @@ class EAClient(EASocketConnection):
         :param nbrofticks: The number of ticks to retrieve.
         :return: A list of tick data if successful, otherwise None.
         """
-        message = self.make_message('F021', '4', [instrument_name, str(nbrofticks)])
+        message = make_message('F021', '4', [instrument_name, str(nbrofticks)])
         self.return_error = ''
 
         try:
@@ -440,7 +441,7 @@ class EAClient(EASocketConnection):
         :param timeframe: The timeframe in MT5 format.
         :return: A dictionary containing the bar information if successful, otherwise None.
         """
-        message = self.make_message('F041', '3', [instrument_name, str(timeframe)])
+        message = make_message('F041', '3', [instrument_name, str(timeframe)])
         self.return_error = ''
 
         try:
@@ -479,7 +480,7 @@ class EAClient(EASocketConnection):
         :return: A list of dictionaries containing the bar information if successful, otherwise None.
         """
         instruments = '$'.join(instrument_list)
-        message = self.make_message('F045', '3', [instruments, str(specific_bar_index), str(timeframe)])
+        message = make_message('F045', '3', [instruments, str(specific_bar_index), str(timeframe)])
         self.return_error = ''
 
         try:
@@ -521,7 +522,7 @@ class EAClient(EASocketConnection):
         :param nbrofbars: The number of bars to retrieve.
         :return: A list of bar data if successful, otherwise None.
         """
-        message = self.make_message('F042', '5', [instrument_name, str(timeframe), '0', str(nbrofbars)])
+        message = make_message('F042', '5', [instrument_name, str(timeframe), '0', str(nbrofbars)])
         self.return_error = ''
 
         try:
@@ -559,7 +560,7 @@ class EAClient(EASocketConnection):
 
         :return: A list of dictionaries containing open position information if successful, otherwise None.
         """
-        message = self.make_message('F061', '1', [])
+        message = make_message('F061', '1', [])
         self.return_error = ''
 
         try:
@@ -605,7 +606,7 @@ class EAClient(EASocketConnection):
 
         :return: A list of dictionaries containing closed position information if successful, otherwise None.
         """
-        message = self.make_message('F063', '1', [])
+        message = make_message('F063', '1', [])
         self.return_error = ''
 
         try:
@@ -653,7 +654,7 @@ class EAClient(EASocketConnection):
 
         :return: A list of dictionaries containing deleted order information if successful, otherwise None.
         """
-        message = self.make_message('F065', '1', [])
+        message = make_message('F065', '1', [])
         self.return_error = ''
 
         try:
@@ -707,7 +708,7 @@ class EAClient(EASocketConnection):
         :param market: Whether the order is a market order.
         :return: The ticket number of the opened order if successful, otherwise None.
         """
-        message = self.make_message('F070', '9', [instrument_name, order_type, str(volume), str(open_price), str(slippage), str(magic_number), str(stop_loss), str(take_profit), comment, str(market)])
+        message = make_message('F070', '9', [instrument_name, order_type, str(volume), str(open_price), str(slippage), str(magic_number), str(stop_loss), str(take_profit), comment, str(market)])
         self.return_error = ''
 
         try:
@@ -735,7 +736,7 @@ class EAClient(EASocketConnection):
         :param ticket: The ticket number of the position.
         :return: True if the position was closed successfully, otherwise False.
         """
-        message = self.make_message('F071', '2', [str(ticket)])
+        message = make_message('F071', '2', [str(ticket)])
         self.return_error = ''
 
         try:
@@ -762,7 +763,7 @@ class EAClient(EASocketConnection):
         :param volume_to_close: The volume to close.
         :return: True if the position was partially closed successfully, otherwise False.
         """
-        message = self.make_message('F072', '3', [str(ticket), str(volume_to_close)])
+        message = make_message('F072', '3', [str(ticket), str(volume_to_close)])
         self.return_error = ''
 
         try:
@@ -785,7 +786,7 @@ class EAClient(EASocketConnection):
         """
         Deletes an order by its ticket number.
         """
-        message = self.make_message('F073', '2', [str(ticket)])
+        message = make_message('F073', '2', [str(ticket)])
         self.return_error = ''
         
         try:
@@ -805,7 +806,7 @@ class EAClient(EASocketConnection):
             raise Exception(f"Failed to delete order by ticket: {error}")
 
     async def get_all_pending_orders(self) -> Optional[List[Dict[str, Any]]]:
-        message = self.make_message('F060', '1', [])
+        message = make_message('F060', '1', [])
         self.return_error = ''
 
         try:
@@ -841,7 +842,7 @@ class EAClient(EASocketConnection):
             raise Exception(f"Failed to get all pending orders: {error}")
 
     async def get_all_closed_positions_within_window(self, date_from: datetime, date_to: datetime) -> Optional[List[Dict[str, Any]]]:
-        message = self.make_message('F062', '3', [date_from.strftime('%Y/%m/%d/%H/%M/%S'), date_to.strftime('%Y/%m/%d/%H/%M/%S')])
+        message = make_message('F062', '3', [date_from.strftime('%Y/%m/%d/%H/%M/%S'), date_to.strftime('%Y/%m/%d/%H/%M/%S')])
         self.return_error = ''
 
         try:
@@ -883,7 +884,7 @@ class EAClient(EASocketConnection):
             raise Exception(f"Failed to get all closed positions within window: {error}")
 
     async def get_all_deleted_pending_orders_within_window(self, date_from: datetime, date_to: datetime) -> Optional[List[Dict[str, Any]]]:
-        message = self.make_message('F064', '3', [date_from.strftime('%Y/%m/%d/%H/%M/%S'), date_to.strftime('%Y/%m/%d/%H/%M/%S')])
+        message = make_message('F064', '3', [date_from.strftime('%Y/%m/%d/%H/%M/%S'), date_to.strftime('%Y/%m/%d/%H/%M/%S')])
         self.return_error = ''
 
         try:
@@ -922,7 +923,7 @@ class EAClient(EASocketConnection):
             raise Exception(f"Failed to get all deleted pending orders within window: {error}")
 
     async def closeby_position_by_ticket(self, ticket: int, opposite_ticket: int) -> bool:
-        message = self.make_message('F074', '3', [str(ticket), str(opposite_ticket)])
+        message = make_message('F074', '3', [str(ticket), str(opposite_ticket)])
         self.return_error = ''
 
         try:
@@ -942,7 +943,7 @@ class EAClient(EASocketConnection):
             raise Exception(f"Failed to close position by opposite position: {error}")
 
     async def close_positions_async(self, instrument_name: str = '***', magic_number: int = -1) -> bool:
-        message = self.make_message('F091', '3', [instrument_name, str(magic_number)])
+        message = make_message('F091', '3', [instrument_name, str(magic_number)])
         self.return_error = ''
 
         try:
@@ -962,7 +963,7 @@ class EAClient(EASocketConnection):
             raise Exception(f"Failed to close positions async: {error}")
 
     async def set_sl_and_tp_for_position(self, ticket: int, stop_loss: float, take_profit: float) -> bool:
-        message = self.make_message('F075', '4', [str(ticket), str(stop_loss), str(take_profit)])
+        message = make_message('F075', '4', [str(ticket), str(stop_loss), str(take_profit)])
         self.return_error = ''
 
         try:
@@ -982,7 +983,7 @@ class EAClient(EASocketConnection):
             raise Exception(f"Failed to set SL and TP for position: {error}")
 
     async def set_sl_and_tp_for_pending_order(self, ticket: int, stop_loss: float, take_profit: float) -> bool:
-        message = self.make_message('F076', '4', [str(ticket), str(stop_loss), str(take_profit)])
+        message = make_message('F076', '4', [str(ticket), str(stop_loss), str(take_profit)])
         self.return_error = ''
 
         try:
@@ -1002,7 +1003,7 @@ class EAClient(EASocketConnection):
             raise Exception(f"Failed to set SL and TP for pending order: {error}")
 
     async def reset_sl_and_tp_for_position(self, ticket: int) -> bool:
-        message = self.make_message('F077', '2', [str(ticket)])
+        message = make_message('F077', '2', [str(ticket)])
         self.return_error = ''
 
         try:
@@ -1022,7 +1023,7 @@ class EAClient(EASocketConnection):
             raise Exception(f"Failed to reset SL and TP for position: {error}")
 
     async def reset_sl_and_tp_for_pending_order(self, ticket: int) -> bool:
-        message = self.make_message('F078', '2', [str(ticket)])
+        message = make_message('F078', '2', [str(ticket)])
         self.return_error = ''
 
         try:
@@ -1042,7 +1043,7 @@ class EAClient(EASocketConnection):
             raise Exception(f"Failed to reset SL and TP for pending order: {error}")
 
     async def change_settings_for_pending_order(self, ticket: int, price: float, stop_loss: float, take_profit: float) -> bool:
-        message = self.make_message('F079', '5', [str(ticket), str(price), str(stop_loss), str(take_profit)])
+        message = make_message('F079', '5', [str(ticket), str(price), str(stop_loss), str(take_profit)])
         self.return_error = ''
 
         try:
@@ -1062,7 +1063,7 @@ class EAClient(EASocketConnection):
             raise Exception(f"Failed to change settings for pending order: {error}")
 
     async def set_global_variable(self, global_name: str, global_value: float) -> bool:
-        message = self.make_message('F080', '3', [global_name, str(global_value)])
+        message = make_message('F080', '3', [global_name, str(global_value)])
         self.return_error = ''
 
         try:
@@ -1082,7 +1083,7 @@ class EAClient(EASocketConnection):
             raise Exception(f"Failed to set global variable: {error}")
 
     async def get_global_variable(self, global_name: str) -> Optional[float]:
-        message = self.make_message('F081', '2', [global_name])
+        message = make_message('F081', '2', [global_name])
         self.return_error = ''
 
         try:
@@ -1104,7 +1105,7 @@ class EAClient(EASocketConnection):
             raise Exception(f"Failed to get global variable: {error}")
 
     async def switch_auto_trading_on_off(self, on_off: bool) -> bool:
-        message = self.make_message('F084', '2', ['On' if on_off else 'Off'])
+        message = make_message('F084', '2', ['On' if on_off else 'Off'])
         self.return_error = ''
 
         try:

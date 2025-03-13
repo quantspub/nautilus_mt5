@@ -1,6 +1,6 @@
 import asyncio
 import itertools
-from typing import Dict, List, Optional, Callable, Union
+from typing import Optional, Callable
 import msgspec
 from nautilus_trader.common.component import Logger
 from nautilus_trader.core.nautilus_pyo3 import SocketClient, SocketConfig
@@ -12,78 +12,6 @@ CRLF = b"\r\n"
 ENCODING = "utf-8"
 UNIQUE_ID = itertools.count()
 
-def make_message(command: str, sub_command: str, parameters: List[str]) -> str:
-        """
-        Constructs a message in the format FXXX^Y^<parameters>.
-
-        :param command: The command identifier (e.g., "F123").
-        :param sub_command: The sub-command or parameter (e.g., "Y").
-        :param parameters: A list of additional parameters (e.g., ["param1", "param2"]).
-        :return: A formatted message string.
-        """
-        try:
-            # Join the parameters with the '^' delimiter
-            params_str = '^'.join(parameters)
-            
-            # Construct the message in the required format
-            message = f"{command}^{sub_command}^{params_str}"
-            
-            return message
-        
-        except Exception as e:
-            # Handle any errors that occur during message construction
-            return f"Error: {str(e)}"
-    
-def parse_response_message(message: str) -> Union[Dict[str, Union[str, List[str]]], Dict[str, str]]:
-        """
-        Parses response message in the format FXXX^Y^<parameters>.
-        The <parameters> part contains the server's response data.
-        Handles hidden '^' delimiters and ensures data is properly extracted.
-
-        :param message: The response or message string to parse.
-        :return: A dictionary containing the command, sub_command, and data.
-        """
-        try:
-            # Split the response or message by the '^' delimiter
-            parts = message.split('^')
-            
-            # Ensure the response or message has at least three parts
-            if len(parts) < 3:
-                raise ValueError("Invalid format. Expected at least three parts separated by '^'.")
-            
-            # Extract the command and sub-command
-            command = parts[0]
-            sub_command = parts[1]
-            
-            # Extract the data (all remaining parts)
-            data = parts[2:]
-            
-            # Find the index of the last non-empty data element
-            last_non_empty_index = len(data) - 1
-            while last_non_empty_index >= 0 and data[last_non_empty_index] == '':
-                last_non_empty_index -= 1
-            
-            # Slice the data list up to the last non-empty index
-            data = data[:last_non_empty_index + 1]
-            
-            # Check for hidden '^' delimiters in data (empty strings in the middle)
-            if '' in data:
-                raise ValueError("Invalid format. Hidden '^' delimiters detected in data.")
-            
-            # Return the parsed components as a dictionary
-            response = {
-                'command': command,
-                'sub_command': sub_command,
-                'data': data
-            }
-            return response
-        
-        except Exception as e:
-            # Handle any errors that occur during parsing
-            return {
-                'error': str(e)
-            }
-                
 class MetaTrader5SocketClient:
     """
     Manages the connection to a MetaTrader 5 server for streaming communication using NautilusTrader's SocketClient.
@@ -104,13 +32,15 @@ class MetaTrader5SocketClient:
     rest_client: Optional[SocketClient]
     stream_client: Optional[SocketClient]
     encoding: str
-    message_handler: Optional[Callable[[str], None]]
+    rest_message_handler: Optional[Callable[[str], None]]
+    stream_message_handler: Optional[Callable[[str], None]]
     is_stream_running: bool
     debug: bool
 
     def __init__(
         self,
-        message_handler: Callable[[str], None],
+        rest_message_handler: Callable[[str], None],
+        stream_message_handler: Callable[[str], None],
         host: str = HOST,
         rest_port: int = REST_PORT,
         stream_port: int = STREAM_PORT,
@@ -122,7 +52,8 @@ class MetaTrader5SocketClient:
         self.stream_port = stream_port
         self.crlf = crlf
         self.encoding = encoding
-        self.handler = message_handler
+        self.rest_handler = rest_message_handler
+        self.stream_handler = stream_message_handler
         self.rest_client: Optional[SocketClient] = None
         self.stream_client: Optional[SocketClient] = None
         self.log = Logger(type(self).__name__)
@@ -143,12 +74,12 @@ class MetaTrader5SocketClient:
             url=f"{self.host}:{self.rest_port}",
             ssl=False,
             suffix=self.crlf,
-            handler=self.handler,
+            handler=self.rest_handler,
         )
         self.rest_client = await SocketClient.connect(            
                                 config=config,            
-                                post_connection=self.post_rest_connection,
-                                post_reconnection=self.post_rest_reconnection)
+                                post_connection=self.post_connection,
+                                post_reconnection=self.post_reconnection)
         self.log.info("Connected")
         
     async def _connect_stream_client(self) -> None:
@@ -164,12 +95,12 @@ class MetaTrader5SocketClient:
             url=f"{self.host}:{self.stream_port}",
             ssl=False,
             suffix=self.crlf,
-            handler=self.handler,
+            handler=self.stream_handler,
         )
         self.stream_client = await SocketClient.connect(
             config=config,            
-            post_connection=self.post_stream_connection,
-            post_reconnection=self.post_stream_reconnection)
+            post_connection=self.post_connection,
+            post_reconnection=self.post_reconnection)
         self.log.info("Connected")
         
     async def connect(self) -> None:
@@ -270,75 +201,9 @@ class MetaTrader5SocketClient:
 
         await self.rest_client.send(message.encode(self.encoding))
         
-    async def send_message(self, message: str) -> str:
-        """
-        Sends a request command/message to the server and returns the decoded response.
-
-        :param message: The message to send.
-        :return: The server's response as a decoded string.
-        """
-        try:
-            reader, writer = await asyncio.open_connection(self.host, self.rest_port)
-            writer.write(message.encode(self.encoding))
-            await writer.drain()
-            response = await reader.read(1024)
-            writer.close()
-            await writer.wait_closed()
-            if self.debug:
-                print(f"Sent: {message}, Received: {response.decode(self.encoding)}")
-            return response.decode(self.encoding)
-        except Exception as e:
-            if self.debug:
-                print(f"Error: {e}")
-            return f"Error: {e}"
-
-    def _listen_stream(self) -> None:
-        """ Internal method to listen for streaming data. """
-        try:
-            while self.is_stream_running and self.stream_client is not None:
-                data = self.stream_client.recv(1024)
-                if data:
-                    decoded_data = data.decode(self.encoding)
-                    if self.debug:
-                        self.log.debug(f"Stream Update: {decoded_data}")
-                    if self.message_handler:
-                        self.message_handler(decoded_data)
-        except Exception as e:
-            print(f"Streaming error: {e}")
-
-    async def post_rest_connection(self) -> None:
-        """
-        Actions to be performed after establishing a REST connection.
-        """
-        pass
-    
-    async def post_stream_connection(self) -> None:
-        """
-        Actions to be performed after establishing a stream connection.
-        
-        Default Connects to the streaming server and continuously listens for updates.
-        """
-        try:
-            self.is_stream_running = True
-            await asyncio.to_thread(self._listen_stream)
-        except Exception as e:
-            self.log.error(f"Streaming connection error: {e}")
-        
     async def post_connection(self) -> None:
         """
         Actions to be performed after establishing a connection.
-        """
-        pass
-    
-    def post_rest_reconnection(self) -> None:
-        """
-        Actions to be performed after re-establishing a REST connection.
-        """
-        pass
-    
-    def post_stream_reconnection(self) -> None:
-        """
-        Actions to be performed after re-establishing a stream connection.
         """
         pass
 
@@ -353,18 +218,6 @@ class MetaTrader5SocketClient:
         Actions to be performed after disconnecting.
         """
         pass
-
-    def auth_message(self) -> dict:
-        """
-        Constructs an authentication message.
-
-        Returns:
-            dict: The authentication message.
-        """
-        return {
-            "op": "authentication",
-            "id": self.unique_id,
-        }
 
 
 class MetaTrader5OrderStreamClient(MetaTrader5SocketClient):
