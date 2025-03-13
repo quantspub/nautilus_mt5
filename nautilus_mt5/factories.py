@@ -10,14 +10,13 @@ from nautilus_trader.live.factories import LiveDataClientFactory
 from nautilus_trader.live.factories import LiveExecClientFactory
 from nautilus_trader.model.identifiers import AccountId
 
-from nautilus_mt5.client import MetaTrader5Client
+from nautilus_mt5.client import MetaTrader5Client, TerminalConnectionMode
 from nautilus_mt5.constants import MT5_VENUE
 from nautilus_mt5.config import (
     DockerizedMT5TerminalConfig,
     MetaTrader5DataClientConfig,
     MetaTrader5ExecClientConfig,
     MetaTrader5InstrumentProviderConfig,
-    TerminalConnectionMode,
     RpycConnectionConfig,
     EAConnectionConfig,
 )
@@ -35,7 +34,7 @@ def get_cached_mt5_client(
     msgbus: MessageBus,
     cache: Cache,
     clock: LiveClock,
-    mode: TerminalConnectionMode = TerminalConnectionMode.IPC,
+    connection_mode: TerminalConnectionMode = TerminalConnectionMode.IPC,
     rpyc_config: RpycConnectionConfig = RpycConnectionConfig(),
     ea_config: EAConnectionConfig = EAConnectionConfig(),
     client_id: int = 1,
@@ -56,7 +55,7 @@ def get_cached_mt5_client(
         The cache for the client.
     clock: LiveClock
         The clock for the client.
-    mode: TerminalConnectionMode
+    connection_mode: TerminalConnectionMode
         The connection mode for the MT5 Terminal.
     rpyc_config: RpycConnectionConfig
         The RPyc connection configuration.
@@ -72,11 +71,11 @@ def get_cached_mt5_client(
 
     """
     PyCondition.not_none(
-        mode,
+        connection_mode,
         "Please provide the `mode` for the MT5 Terminal connection.",
     )
 
-    client_key: tuple = (mode, client_id)
+    client_key: tuple = (connection_mode, client_id)
 
     if client_key not in MT5_CLIENTS:
         client = MetaTrader5Client(
@@ -84,9 +83,11 @@ def get_cached_mt5_client(
             msgbus=msgbus,
             cache=cache,
             clock=clock,
-            mode=mode,
-            rpyc_config=rpyc_config,
-            ea_config=ea_config,
+            connection_mode=connection_mode,
+            mt5_config={
+                "rpyc": rpyc_config,
+                "ea": ea_config,
+            },
             client_id=client_id,
         )
         client.start()
@@ -99,7 +100,7 @@ def get_cached_mt5_client_with_dockerized_gateway(
     msgbus: MessageBus,
     cache: Cache,
     clock: LiveClock,
-    mode: TerminalConnectionMode = TerminalConnectionMode.IPC,
+    connection_mode: TerminalConnectionMode = TerminalConnectionMode.IPC,
     rpyc_config: RpycConnectionConfig = RpycConnectionConfig(),
     ea_config: EAConnectionConfig = EAConnectionConfig(),
     client_id: int = 1,
@@ -121,7 +122,7 @@ def get_cached_mt5_client_with_dockerized_gateway(
         The cache for the client.
     clock: LiveClock
         The clock for the client.
-    mode: TerminalConnectionMode
+    connection_mode: TerminalConnectionMode
         The connection mode for the MT5 Terminal.
     rpyc_config: RpycConnectionConfig
         The RPyc connection configuration.
@@ -150,11 +151,11 @@ def get_cached_mt5_client_with_dockerized_gateway(
             rpyc_config.port = TERMINAL.port
     else:
         PyCondition.not_none(
-            mode,
+            connection_mode,
             "Please provide the `mode` for the MT5 Terminal connection.",
         )
 
-    client_key: tuple = (mode, client_id)
+    client_key: tuple = (connection_mode, client_id)
 
     if client_key not in MT5_CLIENTS:
         client = MetaTrader5Client(
@@ -162,9 +163,11 @@ def get_cached_mt5_client_with_dockerized_gateway(
             msgbus=msgbus,
             cache=cache,
             clock=clock,
-            mode=mode,
-            rpyc_config=rpyc_config,
-            ea_config=ea_config,
+            connection_mode=connection_mode,
+            mt5_config={
+                "rpyc": rpyc_config,
+                "ea": ea_config,
+            },
             client_id=client_id,
         )
         client.start()

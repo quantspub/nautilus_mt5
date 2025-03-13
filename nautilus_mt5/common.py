@@ -460,13 +460,12 @@ class BaseMixin:
     _cache: Cache
     _clock: LiveClock
     _msgbus: MessageBus
-    _rpyc_config: RpycConnectionConfig
-    _ea_config: EAConnectionConfig
+    _mt5_config: Dict[str, Optional[Union[RpycConnectionConfig, EAConnectionConfig]]] 
     _client_id: int
     _requests: Requests
     _subscriptions: Subscriptions
     _event_subscriptions: dict[str, Callable]
-    _terminal_mode: TerminalConnectionMode
+    _terminal_connection_mode: TerminalConnectionMode
     _terminal_platform: TerminalPlatform
     _mt5_client: Dict[str, Optional[Union[MetaTrader5, EAClient]]]
     _is_mt5_connected: asyncio.Event

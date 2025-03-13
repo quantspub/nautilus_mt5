@@ -3,7 +3,7 @@ import asyncio
 import functools
 from collections.abc import Callable, Coroutine
 from inspect import iscoroutinefunction
-from typing import Any
+from typing import Any, Dict, Optional, Union
 from nautilus_trader.cache.cache import Cache
 from nautilus_trader.common.component import Component
 from nautilus_trader.common.component import LiveClock
@@ -11,11 +11,12 @@ from nautilus_trader.common.component import MessageBus
 from nautilus_trader.common.enums import LogColor
 from nautilus_trader.model.identifiers import ClientId
 
+from nautilus_mt5.metatrader5 import RpycConnectionConfig, EAConnectionConfig
+from nautilus_mt5.client import TerminalConnectionMode
 from nautilus_mt5.client.account import MetaTrader5ClientAccountMixin
 from nautilus_mt5.client.connection import MetaTrader5ClientConnectionMixin
 from nautilus_mt5.constants import MT5_VENUE
-from nautilus_mt5.data_types import TerminalConnectionMode
-from nautilus_mt5.metatrader5 import RpycConnectionConfig, EAConnectionConfig
+
 
 class MetaTrader5Client(Component,
                         MetaTrader5ClientConnectionMixin,
@@ -36,9 +37,11 @@ class MetaTrader5Client(Component,
                 msgbus: MessageBus,
                 cache: Cache,
                 clock: LiveClock,
-                mode: TerminalConnectionMode = TerminalConnectionMode.IPC,
-                rpyc_config: RpycConnectionConfig = RpycConnectionConfig(),
-                ea_config: EAConnectionConfig = EAConnectionConfig(),
+                connection_mode: TerminalConnectionMode = TerminalConnectionMode.IPC,
+                mt5_config: Dict[str, Optional[Union[RpycConnectionConfig, EAConnectionConfig]]] = {
+                    "rpyc": RpycConnectionConfig(),
+                    "ea": EAConnectionConfig(),
+                },
                 client_id: int = 1,
         ):
         super().__init__(
@@ -51,9 +54,8 @@ class MetaTrader5Client(Component,
         # Config
         self._loop = loop
         self._cache = cache
-        self._mode = mode
-        self._rpyc_config = rpyc_config
-        self._ea_config = ea_config
+        self._terminal_connection_mode = connection_mode
+        self._mt5_config = mt5_config
         self._client_id = client_id
 
     def _start(self) -> None:
