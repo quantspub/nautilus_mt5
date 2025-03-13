@@ -19,7 +19,8 @@ class EAClient(EASocketConnection):
         super().__init__(config.host, config.rest_port, config.stream_port, config.encoding, config.debug)
         self.config = config
         self.return_error = ''
-        self.ok = False
+        self.ok: bool = False
+        self.id: int = 1
 
     def _process_response(self, response: str, expected_code: str) -> Optional[Dict[str, Any]]:
         """

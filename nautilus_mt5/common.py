@@ -3,10 +3,12 @@ from abc import ABC
 from abc import abstractmethod
 from collections.abc import Callable
 import functools
-from typing import Annotated, Any
+from typing import Annotated, Any, Dict, Optional, Union
 import msgspec
-from nautilus_mt5.data_types import AccountOrderRef, BarData, CommissionReport, Execution, TerminalConnectionMode, TerminalPlatform
-from nautilus_mt5.metatrader5 import MetaTrader5, RpycConnectionConfig, EAConnectionConfig
+
+from nautilus_mt5.client import TerminalConnectionMode, TerminalPlatform
+from nautilus_mt5.data_types import AccountOrderRef, BarData, CommissionReport, Execution
+from nautilus_mt5.metatrader5 import MetaTrader5, EAClient, RpycConnectionConfig, EAConnectionConfig
 from nautilus_trader.cache.cache import Cache
 from nautilus_trader.common.component import LiveClock
 from nautilus_trader.common.component import Logger
@@ -458,15 +460,15 @@ class BaseMixin:
     _cache: Cache
     _clock: LiveClock
     _msgbus: MessageBus
-    _mode: TerminalConnectionMode
-    _platform: TerminalPlatform
     _rpyc_config: RpycConnectionConfig
     _ea_config: EAConnectionConfig
     _client_id: int
     _requests: Requests
     _subscriptions: Subscriptions
     _event_subscriptions: dict[str, Callable]
-    _mt5_client: MetaTrader5
+    _terminal_mode: TerminalConnectionMode
+    _terminal_platform: TerminalPlatform
+    _mt5_client: Dict[str, Optional[Union[MetaTrader5, EAClient]]]
     _is_mt5_connected: asyncio.Event
     _start: Callable
     _startup: Callable

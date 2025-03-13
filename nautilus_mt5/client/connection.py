@@ -1,11 +1,12 @@
 import asyncio
 import functools
+import platform
+from typing import Dict, Union
+from nautilus_trader.common.enums import LogColor
 
 from nautilus_mt5.metatrader5 import MetaTrader5, EAClient
-
-from nautilus_trader.common.enums import LogColor
 from nautilus_mt5.common import BaseMixin
-from nautilus_mt5.data_types import TerminalConnectionState
+from nautilus_mt5.client.types import TerminalConnectionMode, TerminalConnectionState, TerminalPlatform
 
 
 class MetaTrader5ClientConnectionMixin(BaseMixin):
@@ -30,17 +31,10 @@ class MetaTrader5ClientConnectionMixin(BaseMixin):
 
         """
         try:
-            self._initialize_connection_params()
-            await self._connect_socket()
-            self._mt5_client.set_conn_state(TerminalConnectionState.CONNECTING)
-            # await self._send_version_info()
-            # self._mt5_client.decoder = decoder.Decoder(
-            #     wrapper=self._eclient.wrapper,
-            #     serverVersion=self._eclient.serverVersion(),
-            # )
-            # await self._receive_server_info()
+            await self._initialize_and_connect()
+            self._mt5_client['mt5'].set_conn_state(TerminalConnectionState.CONNECTING)
             await self._fetch_terminal_info()
-            self._mt5_client.set_conn_state(TerminalConnectionState.CONNECTED)
+            self._mt5_client['mt5'].set_conn_state(TerminalConnectionState.CONNECTED)
             self._log.info(
                 f"Connected to MetaTrader 5 Terminal (v{self._terminal_version}, {self._build}, {self._build_release_date}) "
                 f"at {self._mt5_client.connection_time} from {self._mt5_config.stream_host}:{self._mt5_config.stream_ws_port} | {self._mt5_config.stream_host}:{self._mt5_config.stream_callback_port}  "
@@ -51,8 +45,8 @@ class MetaTrader5ClientConnectionMixin(BaseMixin):
             await self._disconnect()
         except Exception as e:
             self._log.error(f"Connection failed: {e}")
-            if self._mt5_client._mt5:
-                self._mt5_client.error(
+            if self._mt5_client['mt5']:
+                self._mt5_client['mt5'].error(
                     NO_VALID_ID, CONNECT_FAIL.code(), CONNECT_FAIL.msg()
                 )
             await self._handle_reconnect()
@@ -63,7 +57,7 @@ class MetaTrader5ClientConnectionMixin(BaseMixin):
         """
         try:
             # shut down connection to the MetaTrader 5 terminal
-            self._mt5Client.disconnect()
+            self._mt5_client['mt5'].disconnect()
             if self._is_mt5_connected.is_set():
                 self._log.debug(
                     "`_is_mt5_connected` unset by `_disconnect`.", LogColor.BLUE
@@ -80,31 +74,66 @@ class MetaTrader5ClientConnectionMixin(BaseMixin):
         self._reset()
         self._resume()
 
-    def _initialize_connection_params(self) -> None:
+    async def _initialize_and_connect(self) -> None:
         """
-        Initialize the connection parameters before attempting to connect.
+        Initialize the connection parameters and connect the socket to Terminal.
 
         Sets up the host, port, and client ID for the EClient instance and increments
-        the connection attempt counter. Logs the attempt information.
-
+        the connection attempt counter. Logs the attempt information and connects the socket.
         """
-        self._mt5_client = MetaTrader5Client(self._mt5_config)
-        # self._mt5_client.reset()
-        # self._mt5_client.config = self._mt5_config
-        self._mt5_client.client_id = self._client_id
+        self._terminal_platform = TerminalPlatform(platform.system().capitalize())
+        self._mt5_client = self._create_mt5_client()
+        self._mt5_client['mt5'].id = self._client_id
+        if 'ea' in self._mt5_client:
+            self._mt5_client['ea'].id = self._client_id
 
-    async def _connect_socket(self) -> None:
-        """
-        Connect the socket to Terminal and change the connection state to
-        CONNECTING.
-
-        It is an asynchronous method that runs within the event loop executor.
-
-        """
         self._log.info(
             f"Connecting to {self._mt5_config.stream_host}:{self._mt5_config.stream_ws_port} | {self._mt5_config.stream_host}:{self._mt5_config.stream_callback_port} with client id: {self._client_id}",
         )
-        await asyncio.to_thread(self._mt5_client.connect)
+        await asyncio.to_thread(self._mt5_client['mt5'].connect)
+
+    def _create_mt5_client(self) -> Dict[str, Union[MetaTrader5, EAClient]]:
+        """
+        Create and return the appropriate MetaTrader5 client based on the connection mode.
+        """
+        if self._terminal_mode == TerminalConnectionMode.IPC:
+            return self._create_ipc_client()
+        elif self._terminal_mode == TerminalConnectionMode.EA:
+            return self._create_ea_client()
+        elif self._terminal_mode == TerminalConnectionMode.EA_IPC:
+            return self._create_ea_ipc_client()
+        else:
+            raise ValueError(f"Invalid connection mode: {self._terminal_mode}")
+
+    def _create_ipc_client(self):
+        """
+        Create and return a MetaTrader5 client for IPC mode.
+        """
+        if self._terminal_platform != TerminalPlatform.WINDOWS:
+            client = MetaTrader5(host=self._rpyc_config.host, 
+                               port=self._rpyc_config.port,
+                               keep_alive=self._rpyc_config.keep_alive)
+        else:
+            client = MetaTrader5()
+        
+        return {'mt5': client, 'ea': None}
+
+    def _create_ea_client(self):
+        """
+        Create and return a MetaTrader5 client for EA mode.
+        """
+        client = EAClient(self._ea_config)
+        return {'mt5': None, 'ea': client}
+
+    def _create_ea_ipc_client(self):
+        """
+        Create and return a MetaTrader5 client for EA_IPC mode.
+        """
+        mt5_client = MetaTrader5(host=self._rpyc_config.host, 
+                                 port=self._rpyc_config.port,
+                                 keep_alive=self._rpyc_config.keep_alive) if self._terminal_platform != TerminalPlatform.WINDOWS else MetaTrader5()
+        ea_client = EAClient(self._ea_config)
+        return {'mt5': mt5_client, 'ea': ea_client}
 
     async def _fetch_terminal_info(self) -> None:
         """
@@ -122,7 +151,7 @@ class MetaTrader5ClientConnectionMixin(BaseMixin):
         retries_remaining = 5
 
         while retries_remaining > 0:
-            server_info = await asyncio.to_thread(self._mt5Client.version)
+            server_info = await asyncio.to_thread(self._mt5_client['mt5'].version)
             if isinstance(server_info, tuple) and server_info[0] > 0:
                 self._process_terminal_version(server_info)
                 break
