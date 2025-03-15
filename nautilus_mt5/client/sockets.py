@@ -227,14 +227,16 @@ class MetaTrader5OrderStreamClient(MetaTrader5SocketClient):
 
     def __init__(
         self,
-        message_handler: Callable[[bytes], None],
+        rest_message_handler: Callable[[bytes], None],
+        stream_message_handler: Callable[[bytes], None],
         partition_matched_by_strategy_ref: bool = True,
         include_overall_position: str | None = None,
         customer_strategy_refs: str | None = None,
         **kwargs,
     ) -> None:
         super().__init__(
-            message_handler=message_handler,
+            rest_message_handler=rest_message_handler,
+            stream_message_handler=stream_message_handler,
             **kwargs,
         )
         self.order_filter = {

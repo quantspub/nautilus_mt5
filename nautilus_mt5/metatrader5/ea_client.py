@@ -2,10 +2,8 @@ from typing import Optional, Dict, Any, List
 from datetime import datetime
 
 from nautilus_mt5.metatrader5.config import EAConnectionConfig
-from nautilus_mt5.metatrader5.ea_sockets import EASocketConnection
+from nautilus_mt5.metatrader5.ea_sockets import EASocketConnection, make_message, parse_response_message
 from nautilus_mt5.metatrader5.errors import EA_ERROR_DICT
-from nautilus_mt5.metatrader5.utils import make_message, parse_response_message
-
 
     
 class EAClient(EASocketConnection):

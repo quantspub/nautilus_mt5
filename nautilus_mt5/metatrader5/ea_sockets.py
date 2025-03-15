@@ -1,7 +1,8 @@
 import socket
 import threading
 import asyncio
-from typing import Optional, Callable
+from typing import Optional, Callable, Dict, List, Union
+
 
 class EASocketConnection:
     """
@@ -93,3 +94,43 @@ class EASocketConnection:
         if self.stream_socket:
             self.stream_socket.close()
 
+def make_message(command: str, sub_command: str, parameters: List[str]) -> str:
+    """
+    Constructs a message in the format FXXX^Y^<parameters>.
+
+    :param command: The command identifier (e.g., "F123").
+    :param sub_command: The sub-command or parameter (e.g., "Y").
+    :param parameters: A list of additional parameters (e.g., ["param1", "param2"]).
+    :return: A formatted message string.
+    """
+    try:
+        params_str = '^'.join(parameters)
+        message = f"{command}^{sub_command}^{params_str}"
+        return message
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+
+def parse_response_message(message: str) -> Union[Dict[str, Union[str, List[str]]], Dict[str, str]]:
+    """
+    Parses response message in the format FXXX^Y^<parameters>.
+    The <parameters> part contains the server's response data.
+    Handles hidden '^' delimiters and ensures data is properly extracted.
+
+    :param message: The response or message string to parse.
+    :return: A dictionary containing the command, sub_command, and data.
+    """
+    try:
+        parts = message.split('^')
+        if len(parts) < 3:
+            raise ValueError("Invalid format. Expected at least three parts separated by '^'.")
+
+        command, sub_command, *data = parts
+        data = [d for d in data if d]
+
+        if '' in data:
+            raise ValueError("Invalid format. Hidden '^' delimiters detected in data.")
+
+        return {'command': command, 'sub_command': sub_command, 'data': data}
+    except Exception as e:
+        return {'error': str(e)}
